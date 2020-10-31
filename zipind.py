@@ -17,7 +17,16 @@
     Support:
         Compression only to .rar
         
-    Last_update: 2020-06-29
+    Last_update: 2020-10-31
+
+    Do you wish to buy a coffee to say thanks?  
+    LBC (from LBRY) digital Wallet  
+    > bFmGgebff4kRfo5pXUTZrhAL3zW2GXwJSX  
+
+    We recommend:  
+    mises.org - Educate yourself about economic and political freedom  
+    lbry.tv - Store files and videos on blockchain ensuring free speech  
+    https://www.activism.net/cypherpunk/manifesto.html -  How encryption is essential to Free Speech and Privacy  
 """
 
 import os
@@ -39,7 +48,7 @@ def ensure_folder_existence(folders_path):
     for folder_path in folders_path:
         existence = os.path.isdir(folder_path)
         if existence is False:
-            os.mkdir(folder_name)
+            os.mkdir(folder_path)
     
     
 def ensure_folders_existence(folder_script_path):
@@ -188,10 +197,10 @@ def extension_to_ignore(file):
         return list_extension
 
     list_ignore_extensions = get_ignore_extensions()
-
+    file_lower = file.lower()
     if len(list_ignore_extensions) == 0:
         return False
-    elif file.endswith(list_ignore_extensions):
+    elif file_lower.endswith(list_ignore_extensions):
         return True
     else:
         return False
