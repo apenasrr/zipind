@@ -1,1 +1,2 @@
 python zipind.py
+pause
