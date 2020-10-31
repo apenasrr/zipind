@@ -18,7 +18,7 @@ Requirement:
 Support:  
 -Compression only to .rar  
     
-Last_update: 2020-08-20
+Last_update: 2020-10-31
 
 ---
 Do you wish to buy a coffee to say thanks?  
@@ -28,3 +28,4 @@ LBC (from LBRY) digital Wallet
 ### We recommend:  
 [mises.org](https://mises.org/) - Educate yourself about economic and political freedom  
 [lbry.tv](http://lbry.tv/) - Store files and videos on blockchain ensuring free speech  
+[A Cypherpunk's Manifesto](https://www.activism.net/cypherpunk/manifesto.html) - How encryption is essential to Free Speech and Privacy  
