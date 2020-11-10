@@ -342,7 +342,8 @@ def create_rar_file(path_file_rar, path_origin, max_size=None):
     
     if max_size is None:
         str_max_size = ''
-    else:    
+    else:
+        max_size = max_size * ((1024**2)/1000000)
         str_max_size = str(max_size)
     
     # -ep0 -> preserve folders structure
