@@ -34,7 +34,7 @@ import subprocess
 from config_handler import handle_config_file
 import unidecode
 
-   
+
 def save_txt(str_content, str_name):
 
     # UTF-8 can't handle with the follow caracter in a folder name: 
@@ -343,9 +343,14 @@ def create_rar_file(path_file_rar, path_origin, max_size=None):
     if max_size is None:
         str_max_size = ''
     else:
-        max_size = max_size * ((1024**2)/1000000)
+        max_size = max_size * ((1024**2)/(10**6))
+
+        # keep only 3 decimal to avoid bug in winrar api
+        decimal_limit = 3
+        max_size = int(max_size*(10**decimal_limit))/(10**decimal_limit)
+
         str_max_size = str(max_size)
-    
+
     # -ep0 -> preserve folders structure
     # -ep1 -> ignore folders structure. copy only files
     subprocess.call(f'"%ProgramFiles%\\WinRAR\\Rar.exe" a -cfg- -ep0 -inul ' +
