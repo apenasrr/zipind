@@ -2,13 +2,14 @@
     Create by: apenasrr
     Source: https://github.com/apenasrr/zipind
 """
-import subprocess
 import os
+import subprocess
+import sys
+
 import natsort
 import pandas as pd
-import sys
-from zipind_utils import (normalize_string, get_folder_name_normalized,
-                          save_txt)
+
+from zipind_utils import get_folder_name_normalized, normalize_string, save_txt
 
 
 def constant_store_expansion():
@@ -68,9 +69,9 @@ def df_sort_human(df, column_name):
         """
 
         sorterIndex = dict(zip(sorter, range(len(sorter))))
-        df['order'] = df[column_name].map(sorterIndex)
-        df.sort_values(['order'], ascending=[True], inplace=True)
-        df.drop(['order', column_name], 1, inplace=True)
+        df["order"] = df[column_name].map(sorterIndex)
+        df.sort_values(["order"], ascending=[True], inplace=True)
+        df.drop(["order", column_name], axis=1, inplace=True)
         return df
 
     list_path_file = df[column_name].tolist()
@@ -101,36 +102,37 @@ def get_list_all_videos_sort(path_dir, ignore_extensions=[]):
             list_all_videos.append(path_file)
     # natural sort
     #  normalize latin characters
-    df = pd.DataFrame(list_all_videos, columns=['path_file'])
-    df['path_file_norm'] = ''
-    df['path_file_norm'] = df['path_file'].apply(normalize_string)
+    df = pd.DataFrame(list_all_videos, columns=["path_file"])
+    df["path_file_norm"] = ""
+    df["path_file_norm"] = df["path_file"].apply(normalize_string)
 
     #  process natsort
-    df_sort = df_sort_human(df, 'path_file_norm')
-    list_all_videos_sort = df_sort['path_file'].to_list()
+    df_sort = df_sort_human(df, "path_file_norm")
+    list_all_videos_sort = df_sort["path_file"].to_list()
     return list_all_videos_sort
 
 
-def create_archive_file_from_list_file(path_file_archive, list_files,
-                                       max_size=None, mode='rar'):
+def create_archive_file_from_list_file(
+    path_file_archive, list_files, max_size=None, mode="rar"
+):
 
-    if mode != 'rar' and mode != 'zip':
-        print('Error: zip mode not identified')
+    if mode != "rar" and mode != "zip":
+        print("Error: zip mode not identified")
         return
 
     if len(list_files) > 1:
-        stringa = '\n\n'.join(list_files)
-        save_txt(stringa, 'files_to_zip')
-        file = 'files_to_zip.txt'
-        if mode == 'rar':
-            create_rar_file(path_file_archive, f'@{file}', max_size)
+        stringa = "\n\n".join(list_files)
+        save_txt(stringa, "files_to_zip")
+        file = "files_to_zip.txt"
+        if mode == "rar":
+            create_rar_file(path_file_archive, f"@{file}", max_size)
         else:
-            create_zip_file(path_file_archive, f'@{file}', max_size)
+            create_zip_file(path_file_archive, f"@{file}", max_size)
         os.remove(file)
 
     else:
         path_file_list = list_files[0]
-        if mode == 'rar':
+        if mode == "rar":
             create_rar_file(path_file_archive, f'"{path_file_list}"', max_size)
         else:
             create_zip_file(path_file_archive, f'"{path_file_list}"', max_size)
@@ -139,56 +141,81 @@ def create_archive_file_from_list_file(path_file_archive, list_files,
 def create_rar_file(path_file_archive, path_origin, max_size=None):
 
     if max_size is None:
-        str_max_size = ''
+        str_max_size = ""
     else:
         # Adjustment required by WinRAR
         #  Define '1m' as 1 million bytes and not 1.048.576
-        max_size = max_size * ((1024**2)/(10**6))
+        max_size = max_size * ((1024**2) / (10**6))
         # keep only 3 decimal to avoid bug in winrar api
         decimal_limit = 3
-        max_size = int(max_size*(10**decimal_limit))/(10**decimal_limit)
+        max_size = int(max_size * (10**decimal_limit)) / (
+            10**decimal_limit
+        )
 
         str_max_size = str(max_size)
 
     # -ep0 -> preserve folders structure
-    subprocess.call('"%ProgramFiles%\\WinRAR\\Rar.exe" a -cfg- -ep0 -inul ' +
-                    '-m0 -md4m -mt5 -r -s ' +
-                    f'-v{str_max_size}M "{path_file_archive}" ' +
-                    f'{path_origin}', shell=True)
+    subprocess.call(
+        '"%ProgramFiles%\\WinRAR\\Rar.exe" a -cfg- -ep0 -inul '
+        + "-m0 -md4m -mt5 -r -s "
+        + f'-v{str_max_size}M "{path_file_archive}" '
+        + f"{path_origin}",
+        shell=True,
+    )
 
 
-def get_seven_zip_app():
-    """Ref.: https://info.nrao.edu/computing/guide/file-access-and-archiving/7zip/7z-7za-command-line-guide
+def get_sevenzip_caller():
+    """Get str 7zip caller for CLI interface, by trying all possibles syntax
+    Ref.: https://info.nrao.edu/computing/guide/file-access-and-archiving/7zip/7z-7za-command-line-guide
 
     Returns:
-        str: 7zip callable command in cmd for actual operating systems
+        str: 7zip caller for CLI interface
     """
 
-    dict_seven_zip_app = {'linux': '7z', 'win32': '7za'}
-    seven_zip_app = dict_seven_zip_app[sys.platform]
-    return seven_zip_app
+    list_sevenzipcaller = ["7za", "7z"]
+    for sevenzipcaller in list_sevenzipcaller:
+        result = subprocess.Popen(
+            [sevenzipcaller],
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+        )
+        if "Copyright" in str(result.communicate()[0]):
+            return sevenzipcaller
+    return ""
 
 
 def create_zip_file(path_file_archive, path_origin, max_size=None):
-    # with 7-zip
+    """
+    Create zip file with 7-zip
+    """
 
-    seven_zip_app = get_seven_zip_app()
+    seven_zip_app = get_sevenzip_caller()
 
     if max_size is None:
-        str_max_size = ''
+        str_max_size = ""
     else:
         str_max_size = str(max_size)
 
     # -scsUTF-16LE -> Define encoding as UTF16
     # -spf2 -> preserve folders structure
     # windows
-    subprocess.call(f'{seven_zip_app} a -v{str_max_size}m -spf2 -mx0 ' +
-                    f'"{path_file_archive}" ' +
-                    f'{path_origin} -scsUTF-16LE', shell=True)
+    subprocess.call(
+        f"{seven_zip_app} a -v{str_max_size}m -spf2 -mx0 "
+        + f'"{path_file_archive}" '
+        + f"{path_origin} -scsUTF-16LE",
+        shell=True,
+    )
 
 
-def get_dict_tasks(path_dir, mb_per_file=999,
-                   path_dir_output=None, mode='rar', ignore_extensions=[]):
+def get_dict_tasks(
+    path_dir,
+    mb_per_file=999,
+    path_dir_output=None,
+    mode="rar",
+    ignore_extensions=[],
+):
 
     """
     Build a task list pack, separating files into size-limited groups.
@@ -208,31 +235,35 @@ def get_dict_tasks(path_dir, mb_per_file=999,
     # if destination folder is not specified,
     #  use the parent of the source folder
     if path_dir_output is None:
-        archive_path_file_name_base = os.path.join(abs_path_dir_mother,
-                                                   dir_name_base)
+        archive_path_file_name_base = os.path.join(
+            abs_path_dir_mother, dir_name_base
+        )
     else:
         dir_name_base = get_folder_name_normalized(dir_name_base)
-        archive_path_file_name_base = os.path.join(path_dir_output,
-                                                   dir_name_base)
+        archive_path_file_name_base = os.path.join(
+            path_dir_output, dir_name_base
+        )
 
     # set variables
     zip_file_no = 1
     bytesprocessed = 0
     bytesperfile = mb_per_file * (1024**2) - constant_store_expansion()
 
-    rar_path_file_name = \
-        f'{archive_path_file_name_base}-%03d.{mode}' % zip_file_no
+    rar_path_file_name = (
+        f"{archive_path_file_name_base}-%03d.{mode}" % zip_file_no
+    )
     list_path_files = []
 
     do_create_rar_by_list = False
     do_create_rar_by_single = False
     dict_tasks = {}
-    dict_tasks['mb_per_file'] = mb_per_file
+    dict_tasks["mb_per_file"] = mb_per_file
     list_task = []
 
     # build tasks to compress
-    list_all_videos_sort = \
-        get_list_all_videos_sort(path_dir, ignore_extensions)
+    list_all_videos_sort = get_list_all_videos_sort(
+        path_dir, ignore_extensions
+    )
 
     for path_file in list_all_videos_sort:
         filebytes = os.path.getsize(path_file)
@@ -248,7 +279,7 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
         if do_create_rar_by_list:
             # make dir with files in list
-            print(f'Destiny: {rar_path_file_name}\n')
+            print(f"Destiny: {rar_path_file_name}\n")
 
             task = []
             task.append(rar_path_file_name)
@@ -261,12 +292,13 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
             # configure to next file rar
             zip_file_no += 1
-            rar_path_file_name = \
-                f'{archive_path_file_name_base}-%03d.{mode}' % zip_file_no
+            rar_path_file_name = (
+                f"{archive_path_file_name_base}-%03d.{mode}" % zip_file_no
+            )
             do_create_rar_by_single = False
 
             # add focus file to another list
-            print(f'Add file {path_file}')
+            print(f"Add file {path_file}")
             list_path_files.append(path_file)
             bytesprocessed += filebytes
 
@@ -275,7 +307,7 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
         if do_create_rar_by_single:
             if len(list_path_files) > 0:
-                print(f'Destiny: {rar_path_file_name}\n')
+                print(f"Destiny: {rar_path_file_name}\n")
 
                 task = []
                 task.append(rar_path_file_name)
@@ -284,8 +316,9 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
                 # Configure to next file rar
                 zip_file_no += 1
-                rar_path_file_name = \
-                    f'{archive_path_file_name_base}-%03d.{mode}' % zip_file_no
+                rar_path_file_name = (
+                    f"{archive_path_file_name_base}-%03d.{mode}" % zip_file_no
+                )
                 bytesprocessed = 0
                 list_path_files = []
 
@@ -298,8 +331,9 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
             # configure to next file rar
             zip_file_no += 1
-            rar_path_file_name = \
-                f'{archive_path_file_name_base}-%03d.{mode}' % zip_file_no
+            rar_path_file_name = (
+                f"{archive_path_file_name_base}-%03d.{mode}" % zip_file_no
+            )
             do_create_rar_by_single = False
             list_path_files = []
             # skip to another file
@@ -307,14 +341,14 @@ def get_dict_tasks(path_dir, mb_per_file=999,
 
         # Case list not full and focus file is small
         # put file in list
-        print(f'Add file {path_file}')
+        print(f"Add file {path_file}")
         list_path_files.append(path_file)
         bytesprocessed += filebytes
 
     #  in last file, if list was not empty
     if len(list_path_files) > 0:
         # make dir with files in list
-        print(f'Creating... {rar_path_file_name}')
+        print(f"Creating... {rar_path_file_name}")
 
         task = []
         task.append(rar_path_file_name)
@@ -322,12 +356,17 @@ def get_dict_tasks(path_dir, mb_per_file=999,
         list_task.append(task)
 
     # dict_tasks: object with tasks to compress
-    dict_tasks['tasks'] = list_task
+    dict_tasks["tasks"] = list_task
     return dict_tasks
 
 
-def zipind(path_dir, mb_per_file=999, path_dir_output=None,
-           mode='rar', ignore_extensions=[]):
+def zipind(
+    path_dir,
+    mb_per_file=999,
+    path_dir_output=None,
+    mode="rar",
+    ignore_extensions=[],
+):
     """
     Compresses a folder into independent parts.
     Requirement: Have Winrar installed
@@ -339,22 +378,22 @@ def zipind(path_dir, mb_per_file=999, path_dir_output=None,
     """
 
     # Creates grouped files for independent compression
-    dict_tasks = get_dict_tasks(path_dir, mb_per_file,
-                                path_dir_output, mode, ignore_extensions)
+    dict_tasks = get_dict_tasks(
+        path_dir, mb_per_file, path_dir_output, mode, ignore_extensions
+    )
 
     # Start Compression
     zipind_process(dict_tasks, mode)
 
 
-def zipind_process(dict_tasks, mode='rar'):
+def zipind_process(dict_tasks, mode="rar"):
 
-    mb_per_file = dict_tasks['mb_per_file']
-    task_len = len(dict_tasks['tasks'])
-    for index, task in enumerate(dict_tasks['tasks']):
+    mb_per_file = dict_tasks["mb_per_file"]
+    task_len = len(dict_tasks["tasks"])
+    for index, task in enumerate(dict_tasks["tasks"]):
         rar_path_file_name = task[0]
         list_path_files = task[1]
-        create_archive_file_from_list_file(rar_path_file_name,
-                                           list_path_files,
-                                           mb_per_file,
-                                           mode)
-        print(f'{index+1}/{task_len} - Done')
+        create_archive_file_from_list_file(
+            rar_path_file_name, list_path_files, mb_per_file, mode
+        )
+        print(f"{index+1}/{task_len} - Done")
