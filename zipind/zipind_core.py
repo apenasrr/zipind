@@ -2,14 +2,19 @@
     Create by: apenasrr
     Source: https://github.com/apenasrr/zipind
 """
+from __future__ import annotations
+
 import os
 import subprocess
-import sys
 
 import natsort
 import pandas as pd
 
-from zipind_utils import get_folder_name_normalized, normalize_string, save_txt
+from .zipind_utils import (
+    get_folder_name_normalized,
+    normalize_string,
+    save_txt,
+)
 
 
 def constant_store_expansion():
@@ -80,16 +85,17 @@ def df_sort_human(df, column_name):
     return df
 
 
-def get_list_all_videos_sort(path_dir, ignore_extensions=[]):
+def get_list_all_videos_sort(
+    path_dir: str, ignore_extensions: list = []
+) -> list[str]:
     """list all file sorted
 
     Args:
         path_dir (str): folder path
-        ignore_extensions (list, optional): Extensions to ignore.
-                                            Defaults to [''].
+        ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
 
     Returns:
-        list: sorted list of all files in folder
+        list[str]: sorted list of all files in folder
     """
 
     list_all_videos = []
@@ -210,22 +216,23 @@ def create_zip_file(path_file_archive, path_origin, max_size=None):
 
 
 def get_dict_tasks(
-    path_dir,
-    mb_per_file=999,
-    path_dir_output=None,
-    mode="rar",
-    ignore_extensions=[],
-):
+    path_dir: str,
+    mb_per_file: int = 999,
+    path_dir_output: str = None,
+    mode: str = "rar",
+    ignore_extensions: list = [],
+) -> list[dict]:
+    """Build a task list pack, separating files into size-limited groups.
 
-    """
-    Build a task list pack, separating files into size-limited groups.
-    :input: path_dir: String. Folder path
-    :input: mb_per_file: Integer. Max size of each rar file
-    :input: path_dir_output: String. Folder path output
-    :input: ignore_extensions: List. Extensions to ignore
-    :return: Dict. keys: [mb_per_file, tasks]
-                    tasks: list. List of lists.
-                            [output_path_file, list_path_files]
+    Args:
+        path_dir (str): Folder path
+        mb_per_file (int, optional): Max size of each rar file. Defaults to 999.
+        path_dir_output (str, optional): Folder path output. Defaults to None.
+        mode (str, optional): package mode. (rar or zip). Defaults to "rar".
+        ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
+
+    Returns:
+        list[dict[str, list]]: Tasks metadata. {mb_per_file, tasks[path_file]}
     """
 
     abs_path_dir = os.path.abspath(path_dir)
@@ -360,21 +367,25 @@ def get_dict_tasks(
     return dict_tasks
 
 
-def zipind(
-    path_dir,
-    mb_per_file=999,
-    path_dir_output=None,
-    mode="rar",
-    ignore_extensions=[],
+def run(
+    path_dir: str,
+    mb_per_file: int = 999,
+    path_dir_output: str = None,
+    mode: str = "rar",
+    ignore_extensions: list = [],
 ):
-    """
-    Compresses a folder into independent parts.
+    """Compresses a folder into independent parts.
     Requirement: Have Winrar installed
-    :input: path_dir: String. Folder path
-    :input: mb_per_file: Integer. Max size of each rar file
-    :input: path_dir_output: String. Folder path output
-    :input: ignore_extensions: List. Extensions to ignore
-    :return: None
+
+        Args:
+            path_dir (str): Folder path
+            mb_per_file (int, optional): Max size of each rar file. Defaults to 999.
+            path_dir_output (str, optional): Folder path output. Defaults to None.
+            mode (str, optional): packing mode. rar or zip. Defaults to "rar".
+            ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
+
+        Returns:
+            list[dict]: List of dictionaries containing the path of the files of each package
     """
 
     # Creates grouped files for independent compression
