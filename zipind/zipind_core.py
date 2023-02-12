@@ -86,12 +86,12 @@ def df_sort_human(df, column_name):
 
 
 def get_list_all_videos_sort(
-    path_dir: str, ignore_extensions: list = []
+    path_folder: str, ignore_extensions: list = []
 ) -> list[str]:
     """list all file sorted
 
     Args:
-        path_dir (str): folder path
+        path_folder (str): folder path
         ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
 
     Returns:
@@ -99,7 +99,7 @@ def get_list_all_videos_sort(
     """
 
     list_all_videos = []
-    for root, _, files in os.walk(path_dir):
+    for root, _, files in os.walk(path_folder):
         for file in files:
             file_lower = file.lower()
             if extension_to_ignore(file_lower, ignore_extensions):
@@ -216,18 +216,18 @@ def create_zip_file(path_file_archive, path_origin, max_size=None):
 
 
 def get_dict_tasks(
-    path_dir: str,
+    path_folder: str,
     mb_per_file: int = 999,
-    path_dir_output: str = None,
+    path_folder_output: str = None,
     mode: str = "rar",
     ignore_extensions: list = [],
 ) -> list[dict]:
     """Build a task list pack, separating files into size-limited groups.
 
     Args:
-        path_dir (str): Folder path
+        path_folder (str): Folder path
         mb_per_file (int, optional): Max size of each rar file. Defaults to 999.
-        path_dir_output (str, optional): Folder path output. Defaults to None.
+        path_folder_output (str, optional): Folder path output. Defaults to None.
         mode (str, optional): package mode. (rar or zip). Defaults to "rar".
         ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
 
@@ -235,20 +235,20 @@ def get_dict_tasks(
         list[dict[str, list]]: Tasks metadata. {mb_per_file, tasks[path_file]}
     """
 
-    abs_path_dir = os.path.abspath(path_dir)
-    abs_path_dir_mother = os.path.dirname(abs_path_dir)
-    dir_name_base = os.path.basename(abs_path_dir)
+    abs_path_folder = os.path.abspath(path_folder)
+    abs_path_folder_mother = os.path.dirname(abs_path_folder)
+    folder_name_base = os.path.basename(abs_path_folder)
 
     # if destination folder is not specified,
     #  use the parent of the source folder
-    if path_dir_output is None:
+    if path_folder_output is None:
         archive_path_file_name_base = os.path.join(
-            abs_path_dir_mother, dir_name_base
+            abs_path_folder_mother, folder_name_base
         )
     else:
-        dir_name_base = get_folder_name_normalized(dir_name_base)
+        folder_name_base = get_folder_name_normalized(folder_name_base)
         archive_path_file_name_base = os.path.join(
-            path_dir_output, dir_name_base
+            path_folder_output, folder_name_base
         )
 
     # set variables
@@ -269,7 +269,7 @@ def get_dict_tasks(
 
     # build tasks to compress
     list_all_videos_sort = get_list_all_videos_sort(
-        path_dir, ignore_extensions
+        path_folder, ignore_extensions
     )
 
     for path_file in list_all_videos_sort:
@@ -285,7 +285,7 @@ def get_dict_tasks(
                 do_create_rar_by_list = False
 
         if do_create_rar_by_list:
-            # make dir with files in list
+            # make folder with files in list
             print(f"Destiny: {rar_path_file_name}\n")
 
             task = []
@@ -305,7 +305,8 @@ def get_dict_tasks(
             do_create_rar_by_single = False
 
             # add focus file to another list
-            print(f"Add file {path_file}")
+            path_file_sanitize = path_file.encode(errors="replace").decode()
+            print(f"Add file {path_file_sanitize}")
             list_path_files.append(path_file)
             bytesprocessed += filebytes
 
@@ -348,13 +349,14 @@ def get_dict_tasks(
 
         # Case list not full and focus file is small
         # put file in list
-        print(f"Add file {path_file}")
+        path_file_sanitize = path_file.encode(errors="replace").decode()
+        print(f"Add file {path_file_sanitize}")
         list_path_files.append(path_file)
         bytesprocessed += filebytes
 
     #  in last file, if list was not empty
     if len(list_path_files) > 0:
-        # make dir with files in list
+        # make folder with files in list
         print(f"Creating... {rar_path_file_name}")
 
         task = []
@@ -368,9 +370,9 @@ def get_dict_tasks(
 
 
 def run(
-    path_dir: str,
+    path_folder: str,
     mb_per_file: int = 999,
-    path_dir_output: str = None,
+    path_folder_output: str = None,
     mode: str = "rar",
     ignore_extensions: list = [],
 ):
@@ -378,9 +380,9 @@ def run(
     Requirement: Have Winrar installed
 
         Args:
-            path_dir (str): Folder path
+            path_folder (str): Folder path
             mb_per_file (int, optional): Max size of each rar file. Defaults to 999.
-            path_dir_output (str, optional): Folder path output. Defaults to None.
+            path_folder_output (str, optional): Folder path output. Defaults to None.
             mode (str, optional): packing mode. rar or zip. Defaults to "rar".
             ignore_extensions (list, optional): Extensions to ignore. Defaults to [].
 
@@ -390,7 +392,7 @@ def run(
 
     # Creates grouped files for independent compression
     dict_tasks = get_dict_tasks(
-        path_dir, mb_per_file, path_dir_output, mode, ignore_extensions
+        path_folder, mb_per_file, path_folder_output, mode, ignore_extensions
     )
 
     # Start Compression
