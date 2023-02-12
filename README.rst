@@ -20,11 +20,13 @@ zipind - From a folder, make a splitted ZIP with INDependent parts
 Features
 --------
 
-- Compact folder to .zip or .rar, dividing into independent parts, grouping your files in alphanumeric order.
-- Respects the ordering of folders and files.
-- Respects the internal structure of folders.
-- If any file is larger than the defined maximum size, the specific file is partitioned in dependent mode.
-- Set file types to be ignored in compression (config/ignore_extensions.txt)
+- Compact folder to .zip or .rar, dividing it into independent parts, grouping your files in alphanumeric order.
+- Preserve the ordering of folders and files.
+- Preserve the internal structure of folders.
+- If any file exceeds the defined maximum size, the specific file is splitted in dependent mode.
+- Set the file types to be ignored in compression (config/ignore_extensions.txt)
+- Verify that the file path length is less than the specified limit (default 250 characters).
+- Sanitize the folder and file names characters to ensure compatibility with UTF-8 encoding, by auto-renaming.
 
 Requirements
 ------------
